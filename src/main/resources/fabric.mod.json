@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "petready",
+  "version": "${version}",
+  "name": "PetReady",
+  "description": "Client-side Fabric mod for persistent pet cooldown tracking, centered ready announcements, and a clean Mod Menu configuration screen.",
+  "authors": [
+    "TrustTheCat"
+  ],
+  "license": "MIT",
+  "icon": "assets/petready/icon.png",
+  "contact": {
+    "homepage": "https://modrinth.com/mod/petready",
+    "sources": "https://github.com/olb-freelocs/PetReady"
+  },
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "com.freelocs.petready.PetReadyClient"
+    ],
+    "modmenu": [
+      "com.freelocs.petready.modmenu.PetReadyModMenuIntegration"
+    ]
+  },
+  "mixins": [
+    "petready.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.17.3",
+    "fabric-api": "*",
+    "minecraft": "1.21.11",
+    "java": ">=21"
+  },
+  "suggests": {
+    "modmenu": "*"
+  }
+}
