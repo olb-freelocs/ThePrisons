@@ -1,0 +1,49 @@
+package com.freelocs.theprisons.config;
+
+import com.freelocs.theprisons.ThePrisonsClient;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import net.fabricmc.loader.api.FabricLoader;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public final class ThePrisonsConfigManager {
+    private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
+    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("theprisons.json");
+    private static final Path LEGACY_CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("theprisons.json");
+
+    private ThePrisonsConfig config = new ThePrisonsConfig();
+
+    public ThePrisonsConfig get() {
+        return config;
+    }
+
+    public void load() {
+        try {
+            Path sourcePath = Files.exists(CONFIG_PATH) ? CONFIG_PATH : LEGACY_CONFIG_PATH;
+            if (!Files.exists(sourcePath)) {
+                save();
+                return;
+            }
+
+            ThePrisonsConfig loaded = GSON.fromJson(Files.readString(sourcePath), ThePrisonsConfig.class);
+            config = loaded == null ? new ThePrisonsConfig() : loaded;
+            config.normalize();
+        } catch (Exception exception) {
+            ThePrisonsClient.LOGGER.warn("Failed to load config", exception);
+            config = new ThePrisonsConfig();
+        }
+    }
+
+    public void save() {
+        try {
+            config.normalize();
+            Files.createDirectories(CONFIG_PATH.getParent());
+            Files.writeString(CONFIG_PATH, GSON.toJson(config));
+        } catch (IOException exception) {
+            ThePrisonsClient.LOGGER.warn("Failed to save config", exception);
+        }
+    }
+}
