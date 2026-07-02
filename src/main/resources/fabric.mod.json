@@ -1,29 +1,29 @@
 {
   "schemaVersion": 1,
-  "id": "petready",
-  "version": "${version}",
-  "name": "PetReady",
-  "description": "Client-side Fabric mod for persistent pet cooldown tracking, centered ready announcements, and a clean Mod Menu configuration screen.",
+  "id": "theprisons",
+  "version": "0.3",
+  "name": "ThePrisons",
+  "description": "Client-side Fabric mod for persistent pet and Trinkets cooldown tracking, centered ready announcements, and a clean Mod Menu configuration screen.",
   "authors": [
     "TrustTheCat"
   ],
   "license": "MIT",
-  "icon": "assets/petready/icon.png",
+  "icon": "assets/theprisons/icon.png",
   "contact": {
-    "homepage": "https://modrinth.com/mod/petready",
-    "sources": "https://github.com/olb-freelocs/PetReady"
+    "homepage": "https://github.com/olb-freelocs/ThePrisons",
+    "sources": "https://github.com/olb-freelocs/ThePrisons"
   },
   "environment": "client",
   "entrypoints": {
     "client": [
-      "com.freelocs.petready.PetReadyClient"
+      "com.freelocs.theprisons.ThePrisonsClient"
     ],
     "modmenu": [
-      "com.freelocs.petready.modmenu.PetReadyModMenuIntegration"
+      "com.freelocs.theprisons.modmenu.ThePrisonsModMenuIntegration"
     ]
   },
   "mixins": [
-    "petready.mixins.json"
+    "theprisons.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.17.3",

@@ -11,6 +11,14 @@ base {
     archivesName = project.archives_base_name
 }
 
+tasks.named('jar', Jar) {
+    archiveFileName = "ThePrisons-0.3.jar"
+}
+
+tasks.named('remapJar') {
+    archiveFileName = "ThePrisons-0.3.jar"
+}
+
 repositories {
     mavenCentral()
     maven {
