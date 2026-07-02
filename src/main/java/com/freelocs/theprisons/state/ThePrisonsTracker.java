@@ -3,7 +3,6 @@ package com.freelocs.theprisons.state;
 import com.freelocs.theprisons.ThePrisonsClient;
 import com.freelocs.theprisons.cache.ThePrisonsCache.ThePrisonsEntry;
 import com.freelocs.theprisons.config.ThePrisonsConfig;
-import com.freelocs.theprisons.compat.ThePrisonsTrinketsCompat;
 import com.freelocs.theprisons.mixin.ThePrisonsItemCooldownInstanceAccessor;
 import com.freelocs.theprisons.mixin.ThePrisonsItemCooldownsAccessor;
 import com.freelocs.theprisons.ui.ThePrisonsHudRenderer;
@@ -41,27 +40,23 @@ public final class ThePrisonsTracker {
             return;
         }
 
-        changed |= scanInventory(player, nowMs);
-        changed |= scanTrinkets(player, nowMs);
+        changed |= syncInventory(player, nowMs);
+        changed |= syncTrinkets(player, nowMs);
 
         if (changed) {
             ThePrisonsClient.CACHE.save();
         }
     }
 
-    private boolean scanInventory(ClientPlayerEntity player, long nowMs) {
-        return scanStacks(player, player.getInventory().getMainStacks(), nowMs, SOURCE_PET, true);
+    private boolean syncInventory(ClientPlayerEntity player, long nowMs) {
+        return syncStacks(player, player.getInventory().getMainStacks(), nowMs, SOURCE_PET, this::isPet);
     }
 
-    private boolean scanTrinkets(ClientPlayerEntity player, long nowMs) {
-        if (!ThePrisonsTrinketsCompat.isAvailable()) {
-            return false;
-        }
-
-        return scanStacks(player, ThePrisonsTrinketsCompat.getEquippedStacks(player), nowMs, SOURCE_TRINKET, false);
+    private boolean syncTrinkets(ClientPlayerEntity player, long nowMs) {
+        return syncStacks(player, player.getInventory().getMainStacks(), nowMs, SOURCE_TRINKET, this::isTrinket);
     }
 
-    private boolean scanStacks(ClientPlayerEntity player, Iterable<ItemStack> stacks, long nowMs, String source, boolean petOnly) {
+    private boolean syncStacks(ClientPlayerEntity player, Iterable<ItemStack> stacks, long nowMs, String source, java.util.function.Predicate<String> matchesType) {
         Set<String> seen = new HashSet<>();
         boolean changed = false;
         ItemCooldownManager cooldowns = player.getItemCooldownManager();
@@ -76,7 +71,7 @@ public final class ThePrisonsTracker {
 
             String stackName = stripLevel(stack.getName().getString());
             String normalizedName = normalize(stackName);
-            if (petOnly && !isPet(normalizedName)) {
+            if (!matchesType.test(normalizedName)) {
                 continue;
             }
 
@@ -128,6 +123,35 @@ public final class ThePrisonsTracker {
                 }
             }
         }
+
+        changed |= pruneMissingEntries(source, seen);
+        return changed;
+    }
+
+    private boolean pruneMissingEntries(String source, Set<String> seen) {
+        boolean changed = false;
+        Set<String> toRemove = new HashSet<>();
+
+        for (Map.Entry<String, ThePrisonsEntry> entry : ThePrisonsClient.CACHE.entries().entrySet()) {
+            ThePrisonsEntry value = entry.getValue();
+            if (value == null || value.key == null || value.source == null) {
+                continue;
+            }
+
+            if (!source.equalsIgnoreCase(value.source)) {
+                continue;
+            }
+
+            if (!seen.contains(value.key)) {
+                toRemove.add(entry.getKey());
+            }
+        }
+
+        for (String key : toRemove) {
+            ThePrisonsClient.CACHE.entries().remove(key);
+            changed = true;
+        }
+
         return changed;
     }
 
@@ -149,6 +173,13 @@ public final class ThePrisonsTracker {
 
     private boolean isPet(String displayName) {
         return displayName.contains(PET_TOKEN) && !displayName.equals("pet ready");
+    }
+
+    private boolean isTrinket(String displayName) {
+        return displayName.contains("trinket")
+                || displayName.contains("hook")
+                || displayName.contains("orb")
+                || displayName.contains("potion");
     }
 
     private String normalize(String value) {
