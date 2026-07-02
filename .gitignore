@@ -1,6 +1,37 @@
+# Gradle / Fabric Loom
 .gradle/
 build/
 out/
-.idea/
-*.iml
 run/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# IntelliJ module files sometimes end up in subfolders
+**/*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs and crash reports
+logs/
+crash-reports/
+*.log
+hs_err_pid*
+replay_pid*
+
+# Local tooling and temp files
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# Java build leftovers
+*.class
+*.jar
+!gradle/wrapper/gradle-wrapper.jar

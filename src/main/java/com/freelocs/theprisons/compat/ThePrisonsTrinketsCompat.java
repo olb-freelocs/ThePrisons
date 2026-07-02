@@ -3,30 +3,27 @@ package com.freelocs.theprisons.compat;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.ItemStack;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
+import java.util.function.BiConsumer;
 
 public final class ThePrisonsTrinketsCompat {
     private static final boolean AVAILABLE;
     private static final Method GET_TRINKET_COMPONENT;
-    private static final Method GET_EQUIPPED;
+    private static final Method FOR_EACH;
 
     static {
         Method getTrinketComponent = null;
-        Method getEquipped = null;
+        Method forEach = null;
         boolean available = false;
 
         try {
             Class<?> trinketsApi = Class.forName("dev.emi.trinkets.api.TrinketsApi");
             Class<?> trinketComponent = Class.forName("dev.emi.trinkets.api.TrinketComponent");
             getTrinketComponent = trinketsApi.getMethod("getTrinketComponent", net.minecraft.entity.LivingEntity.class);
-            getEquipped = trinketComponent.getMethod("getEquipped", Predicate.class);
+            forEach = trinketComponent.getMethod("forEach", BiConsumer.class);
             available = true;
         } catch (ReflectiveOperationException exception) {
             available = false;
@@ -34,7 +31,7 @@ public final class ThePrisonsTrinketsCompat {
 
         AVAILABLE = available;
         GET_TRINKET_COMPONENT = getTrinketComponent;
-        GET_EQUIPPED = getEquipped;
+        FOR_EACH = forEach;
     }
 
     private ThePrisonsTrinketsCompat() {
@@ -56,76 +53,15 @@ public final class ThePrisonsTrinketsCompat {
             }
 
             Object component = optional.get();
-            Object equipped = GET_EQUIPPED.invoke(component, (Predicate<Object>) value -> true);
-            return extractStacks(equipped);
+            List<ItemStack> stacks = new java.util.ArrayList<>();
+            FOR_EACH.invoke(component, (BiConsumer<Object, Object>) (slotReference, stack) -> {
+                if (stack instanceof ItemStack itemStack && !itemStack.isEmpty()) {
+                    stacks.add(itemStack);
+                }
+            });
+            return stacks;
         } catch (ReflectiveOperationException exception) {
             return Collections.emptyList();
         }
-    }
-
-    private static List<ItemStack> extractStacks(Object value) {
-        List<ItemStack> stacks = new ArrayList<>();
-        if (value == null) {
-            return stacks;
-        }
-
-        if (value instanceof Map<?, ?> map) {
-            for (Object entryValue : map.values()) {
-                stacks.addAll(extractStacks(entryValue));
-            }
-            return stacks;
-        }
-
-        if (value instanceof Iterable<?> iterable) {
-            for (Object entry : iterable) {
-                ItemStack stack = extractStack(entry);
-                if (!stack.isEmpty()) {
-                    stacks.add(stack);
-                }
-            }
-            return stacks;
-        }
-
-        if (value.getClass().isArray()) {
-            int length = Array.getLength(value);
-            for (int index = 0; index < length; index++) {
-                ItemStack stack = extractStack(Array.get(value, index));
-                if (!stack.isEmpty()) {
-                    stacks.add(stack);
-                }
-            }
-        }
-
-        return stacks;
-    }
-
-    private static ItemStack extractStack(Object entry) {
-        if (entry instanceof ItemStack stack) {
-            return stack;
-        }
-
-        if (entry == null) {
-            return ItemStack.EMPTY;
-        }
-
-        for (String methodName : new String[] {"getRight", "right", "getSecond", "second"}) {
-            try {
-                Method method = entry.getClass().getMethod(methodName);
-                Object value = method.invoke(entry);
-                if (value instanceof ItemStack stack) {
-                    return stack;
-                }
-            } catch (ReflectiveOperationException ignored) {
-            }
-        }
-
-        if (entry.getClass().isArray() && Array.getLength(entry) > 1) {
-            Object value = Array.get(entry, 1);
-            if (value instanceof ItemStack stack) {
-                return stack;
-            }
-        }
-
-        return ItemStack.EMPTY;
     }
 }
